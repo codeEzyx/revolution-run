@@ -23,6 +23,9 @@
   color-scheme: dark;
 }
 html, body { background: var(--bg); color: var(--fg); }
+/* keep hidden things hidden even when a class sets display */
+[hidden] { display: none !important; }
+body { margin: 0; }
 body {
   font-family: var(--body);
   font-size: 21px;
