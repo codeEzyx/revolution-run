@@ -73,7 +73,7 @@ ol { margin: 0; padding-left: 1.3em; } li { margin: 2px 0; }
   <header>
     <div>
       <h1>REVOLUTION RUN</h1>
-      <div class="tri"><i id="devToggle"></i><i></i><i></i></div>
+      <div class="tri"><i></i><i></i><i></i></div>
     </div>
   </header>
 
@@ -110,7 +110,7 @@ ol { margin: 0; padding-left: 1.3em; } li { margin: 2px 0; }
     </section>
   </div>
   <section class="card dev" id="dev" hidden>
-    <h2>DEV PANEL (TESTING ONLY)</h2>
+    <h2>DEV PANEL</h2>
     <div class="row">
       <button type="button" data-dev="l1">LEVEL 1</button>
       <button type="button" data-dev="l2">LEVEL 2</button>
@@ -902,10 +902,9 @@ function frame(now) {
 }
 /* ---------- dev panel ---------- */
 let god = false;
-const devPanel = document.getElementById('dev'), devToggle = document.getElementById('devToggle');
-// the blue part of the stripe under the title opens the dev panel
+const devPanel = document.getElementById('dev');
+// the ` key opens the dev panel
 function toggleDev() { devPanel.hidden = !devPanel.hidden; }
-devToggle.addEventListener('click', () => { toggleDev(); cv.focus(); });
 addEventListener('keydown', e => { if (e.code === 'Backquote') toggleDev(); });
 const DEV = {
   l1: () => startLevel(0),
