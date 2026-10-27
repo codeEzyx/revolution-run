@@ -65,7 +65,7 @@ kbd { font-family: var(--display); font-size: 10px; background: #000; border: 1p
 .sound { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 .sound label { font-family: var(--display); font-size: 9px; color: var(--dim); }
 #vol { width: 140px; max-width: 100%; accent-color: var(--gold); }
-#mute { font-family: var(--display); font-size: 10px; color: var(--fg); background: #000; border: 2px solid var(--line); padding: 8px 10px; cursor: pointer; }
+#mute, #voice { font-family: var(--display); font-size: 10px; color: var(--fg); background: #000; border: 2px solid var(--line); padding: 8px 10px; cursor: pointer; }
 #mute:focus-visible, .touch button:focus-visible, canvas:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 ol { margin: 0; padding-left: 1.3em; } li { margin: 2px 0; }
 </style>
@@ -99,6 +99,7 @@ ol { margin: 0; padding-left: 1.3em; } li { margin: 2px 0; }
       </dl>
       <div class="sound">
         <button id="mute" type="button">SOUND: ON</button>
+        <button id="voice" type="button">VOICE: ON</button>
         <label for="vol">VOLUME</label>
         <input id="vol" type="range" min="0" max="100" value="80">
       </div>
@@ -319,8 +320,34 @@ document.querySelectorAll('.touch button').forEach(b => {
   b.addEventListener('contextmenu', e => e.preventDefault());
 });
 const muteBtn = document.getElementById('mute');
-function toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : volume; muteBtn.textContent = 'SOUND: ' + (muted ? 'OFF' : 'ON'); }
+function toggleMute() { muted = !muted; if (muted) stopVoice(); if (master) master.gain.value = muted ? 0 : volume; muteBtn.textContent = 'SOUND: ' + (muted ? 'OFF' : 'ON'); }
 let volume = 0.8;
+/* ---------- voice: reads the story screens aloud with the browser's built-in text-to-speech ---------- */
+const TTS = window.speechSynthesis || null;
+let voiceOn = true, voicePick = null;
+function pickVoice() {
+  const vs = TTS ? TTS.getVoices().filter(v => v.lang && v.lang.startsWith('en')) : [];
+  voicePick = vs.find(v => /Samantha|Daniel|Google US English|Google UK English/.test(v.name)) || vs.find(v => v.default) || vs[0] || null;
+}
+if (TTS) { pickVoice(); TTS.onvoiceschanged = pickVoice; }
+function stopVoice() { if (TTS) TTS.cancel(); }
+function speak(o) {
+  stopVoice();
+  if (!TTS || !voiceOn || muted) return;
+  // read the title in normal case so it isn't spelled out, and pause between paragraphs
+  const said = (o.title.toLowerCase() + '. ' + o.body.replace(/\n\n/g, '. ').replace(/\n/g, ' ')).replace(/\.\s*\./g, '.').replace('GOAL:', 'Goal:');
+  const u = new SpeechSynthesisUtterance(said);
+  if (voicePick) u.voice = voicePick;
+  u.rate = 0.95; u.volume = Math.max(0, Math.min(1, volume));
+  TTS.speak(u);
+}
+const voiceBtn = document.getElementById('voice');
+if (!TTS) voiceBtn.hidden = true;
+voiceBtn.addEventListener('click', () => {
+  voiceOn = !voiceOn; voiceBtn.textContent = 'VOICE: ' + (voiceOn ? 'ON' : 'OFF');
+  if (!voiceOn) stopVoice(); else if (state === 'text' && scr) speak(scr);
+  cv.focus();
+});
 const volSlider = document.getElementById('vol');
 volSlider.addEventListener('input', () => { audioInit(); volume = volSlider.value / 100; if (master && !muted) master.gain.value = volume; });
 volSlider.addEventListener('change', () => cv.focus());
@@ -416,8 +443,10 @@ function showText(o, next) {
   scr = { ...o, lines, total: lines.reduce((a, l) => a + l.length, 0), t: 0, last: 0, next };
   state = 'text';
   if (o.song) playSong(o.song);
+  speak(o);
 }
 function startLevel(i) {
+  stopVoice();
   lvl = i; L = BUILD[i](); prerender(L);
   P = { x: 2 * TS + 3, y: 9 * TS + 2, w: 10, h: 14, vx: 0, vy: 0, ground: true, inv: 0, jbuf: 0, coy: 0, face: 1, at: 0, stun: 0, pump: 0, stop: 0, dashTo: null, from: 0 };
   if (i === 0) P.x = W / 2 - 5;
@@ -880,7 +909,7 @@ function frame(now) {
   } else if (state === 'text') {
     drawText(dt);
     const shown = Math.floor(scr.t * 55);
-    if ((pressed.ok || pressed.jump) && scr.t > 0.8) { if (shown < scr.total) scr.t = scr.total / 55 + 0.01; else scr.next(); }
+    if ((pressed.ok || pressed.jump) && scr.t > 0.8) { if (shown < scr.total) scr.t = scr.total / 55 + 0.01; else { stopVoice(); scr.next(); } }
   } else if (state === 'end') {
     drawEnd(dt);
     if (ok) { state = 'title'; titleT = 0; }
