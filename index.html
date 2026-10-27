@@ -330,15 +330,23 @@ function pickVoice() {
   voicePick = vs.find(v => /Samantha|Daniel|Google US English|Google UK English/.test(v.name)) || vs.find(v => v.default) || vs[0] || null;
 }
 if (TTS) { pickVoice(); TTS.onvoiceschanged = pickVoice; }
+// say years the way people do ("seventeen eighty-nine"), not as an amount ("one thousand seven hundred...")
+const ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+function twoDigits(n) { return n < 20 ? ONES[n] : TENS[Math.floor(n / 10)] + (n % 10 ? '-' + ONES[n % 10] : ''); }
+function yearWords(y) {
+  const hi = Math.floor(y / 100), lo = y % 100;
+  return twoDigits(hi) + ' ' + (lo === 0 ? 'hundred' : lo < 10 ? 'oh ' + ONES[lo] : twoDigits(lo));
+}
 function stopVoice() { if (TTS) TTS.cancel(); }
 function speak(o) {
   stopVoice();
   if (!TTS || !voiceOn || muted) return;
   // read the title in normal case so it isn't spelled out, and pause between paragraphs
-  const said = (o.title.toLowerCase() + '. ' + o.body.replace(/\n\n/g, '. ').replace(/\n/g, ' ')).replace(/\.\s*\./g, '.').replace('GOAL:', 'Goal:');
+  const said = (o.title.toLowerCase() + '. ' + o.body.replace(/\n\n/g, '. ').replace(/\n/g, ' ')).replace(/\.\s*\./g, '.').replace('GOAL:', 'Goal:').replace(/\b1[0-9]{3}\b/g, y => yearWords(+y));
   const u = new SpeechSynthesisUtterance(said);
   if (voicePick) u.voice = voicePick;
-  u.rate = 0.95; u.volume = Math.max(0, Math.min(1, volume));
+  u.rate = 1.1; u.volume = Math.max(0, Math.min(1, volume));
   TTS.speak(u);
 }
 const voiceBtn = document.getElementById('voice');
