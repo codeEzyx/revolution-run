@@ -64,7 +64,13 @@ kbd { font-family: var(--display); font-size: 10px; background: #000; border: 1p
 
 .sound { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 .sound label { font-family: var(--display); font-size: 9px; color: var(--dim); }
-#vol { width: 140px; max-width: 100%; accent-color: var(--gold); }
+/* the label and slider stay together; the slider is drawn in the game's pixel style */
+.vol { display: inline-flex; align-items: center; gap: 10px; }
+#vol { -webkit-appearance: none; appearance: none; width: 150px; max-width: 100%; height: 12px; margin: 0; border: 2px solid var(--line); background: linear-gradient(to right, var(--gold) var(--fill, 80%), #000 var(--fill, 80%)); cursor: pointer; }
+#vol::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 20px; background: var(--fg); border: 2px solid #000; border-radius: 0; }
+#vol::-moz-range-thumb { width: 10px; height: 18px; background: var(--fg); border: 2px solid #000; border-radius: 0; }
+#vol::-moz-range-track { background: transparent; }
+#vol:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 #mute, #voice { font-family: var(--display); font-size: 10px; color: var(--fg); background: #000; border: 2px solid var(--line); padding: 8px 10px; cursor: pointer; }
 #mute:focus-visible, .touch button:focus-visible, canvas:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 ol { margin: 0; padding-left: 1.3em; } li { margin: 2px 0; }
@@ -100,8 +106,7 @@ ol { margin: 0; padding-left: 1.3em; } li { margin: 2px 0; }
       <div class="sound">
         <button id="mute" type="button">SOUND: ON</button>
         <button id="voice" type="button">VOICE: ON</button>
-        <label for="vol">VOLUME</label>
-        <input id="vol" type="range" min="0" max="100" value="80">
+        <span class="vol"><label for="vol">VOLUME</label><input id="vol" type="range" min="0" max="100" value="80"></span>
       </div>
     </section>
     <section class="card">
@@ -357,7 +362,7 @@ voiceBtn.addEventListener('click', () => {
   cv.focus();
 });
 const volSlider = document.getElementById('vol');
-volSlider.addEventListener('input', () => { audioInit(); volume = volSlider.value / 100; if (master && !muted) master.gain.value = volume; });
+volSlider.addEventListener('input', () => { audioInit(); volume = volSlider.value / 100; volSlider.style.setProperty('--fill', volSlider.value + '%'); if (master && !muted) master.gain.value = volume; });
 volSlider.addEventListener('change', () => cv.focus());
 muteBtn.addEventListener('click', () => { audioInit(); toggleMute(); });
 
